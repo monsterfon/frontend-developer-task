@@ -5,7 +5,7 @@
 Hi there 👋
 
 We would like you to create a single-page application.
-The goal of the task is to have an overview of your technical abilities and a common starting point for topics we will discuss during the technical interview. We recommend that you use all the best practices that you know of to showcase your strengths. Even if the application is small we would like you to structure and organise it in a way to be scalable.
+The goal of the task is to have an overview of your technical abilities and a common starting point for topics we will discuss during the technical interview. We recommend that you use all the best practices that you know of to showcase your strengths. Even if the application is small we would like you to structure and organise it in a way to be scalable. Reusable components. Easy to change code. Clear folder structure. Separation of concerns. Predictable state flow.
 
 ## :joystick: Task brief
 
