@@ -17,6 +17,7 @@ function goToPhoto(id: string) {
   router.push({ name: 'detail', params: { id } })
 }
 
+// Calculate the "Showing X–Y of Z" label
 const rangeLabel = computed(() => {
   if (!store.totalPhotos) return ''
   const from = (store.currentPage - 1) * store.limit + 1
@@ -44,48 +45,51 @@ const pageNumbers = computed(() => {
       <span class="navbar__logo">HANNAH</span>
     </header>
 
-    <!-- Toolbar -->
-    <div class="toolbar">
-      <span class="toolbar__range">{{ rangeLabel }}</span>
-      <nav class="toolbar__pagination">
-        <button
-          class="toolbar__page-btn toolbar__page-btn--arrow"
-          :disabled="store.currentPage === 1"
-          @click="store.loadPage(store.currentPage - 1)"
-        >&lsaquo;</button>
-        <button
-          v-for="page in pageNumbers"
-          :key="page"
-          class="toolbar__page-btn"
-          :class="{ 'toolbar__page-btn--active': page === store.currentPage }"
-          @click="store.loadPage(page)"
-        >
-          {{ page }}
-        </button>
-        <button
-          class="toolbar__page-btn toolbar__page-btn--arrow"
-          :disabled="store.currentPage * store.limit >= store.totalPhotos"
-          @click="store.loadPage(store.currentPage + 1)"
-        >&rsaquo;</button>
-      </nav>
-    </div>
-
-    <!-- Grid -->
-    <main class="gallery">
-      <div v-if="store.isLoading" class="gallery__loading">Loading…</div>
-
-      <div v-else-if="store.error" class="gallery__error">{{ store.error }}</div>
-
-      <div v-else class="gallery__grid" :style="{ '--columns': store.columns }">
-        <PhotoCard
-          v-for="photo in store.photos"
-          :key="photo.id"
-          :photo="photo"
-          :active="photo.id === store.lastViewedId"
-          @click="goToPhoto(photo.id)"
-        />
+    <!-- Content panel -->
+    <div class="panel">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <span class="toolbar__range">{{ rangeLabel }}</span>
+        <nav class="toolbar__pagination">
+          <button
+            class="toolbar__page-btn toolbar__page-btn--arrow"
+            :disabled="store.currentPage === 1"
+            @click="store.loadPage(store.currentPage - 1)"
+          >&lsaquo;</button>
+          <button
+            v-for="page in pageNumbers"
+            :key="page"
+            class="toolbar__page-btn"
+            :class="{ 'toolbar__page-btn--active': page === store.currentPage }"
+            @click="store.loadPage(page)"
+          >
+            {{ page }}
+          </button>
+          <button
+            class="toolbar__page-btn toolbar__page-btn--arrow"
+            :disabled="store.currentPage * store.limit >= store.totalPhotos"
+            @click="store.loadPage(store.currentPage + 1)"
+          >&rsaquo;</button>
+        </nav>
       </div>
-    </main>
+
+      <!-- Grid -->
+      <main class="gallery">
+        <div v-if="store.isLoading" class="gallery__loading">Loading…</div>
+
+        <div v-else-if="store.error" class="gallery__error">{{ store.error }}</div>
+
+        <div v-else class="gallery__grid" :style="{ '--columns': store.columns }">
+          <PhotoCard
+            v-for="photo in store.photos"
+            :key="photo.id"
+            :photo="photo"
+            :active="photo.id === store.lastViewedId"
+            @click="goToPhoto(photo.id)"
+          />
+        </div>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -95,7 +99,7 @@ const pageNumbers = computed(() => {
 // ── Layout ──────────────────────────────────────────────────────────────────
 .page {
   min-height: 100vh;
-  background: $bg;
+  background: $white;
 }
 
 // ── Navbar ──────────────────────────────────────────────────────────────────
@@ -115,6 +119,15 @@ const pageNumbers = computed(() => {
   }
 }
 
+// ── Panel ────────────────────────────────────────────────────────────────────
+.panel {
+  margin: 1.5rem $page-padding;
+  background: $bg;
+  border-radius: 12px;
+  border: 1px solid $border;
+  overflow: hidden;
+}
+
 // ── Toolbar ──────────────────────────────────────────────────────────────────
 .toolbar {
   display: flex;
@@ -122,7 +135,7 @@ const pageNumbers = computed(() => {
   justify-content: space-between;
   padding: 0 $page-padding;
   height: 52px;
-  background: $white;
+  background: $bg;
   border-bottom: 1px solid $border;
 
   &__range {
@@ -171,7 +184,7 @@ const pageNumbers = computed(() => {
 
 // ── Gallery ─────────────────────────────────────────────────────────────────
 .gallery {
-  padding: 1.5rem $page-padding;
+  padding: 1.5rem;
 
   &__loading {
     text-align: center;

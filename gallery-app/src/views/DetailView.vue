@@ -76,52 +76,55 @@ function goBack() {
       <span class="navbar__logo">HANNAH</span>
     </header>
 
-    <!-- Sub-toolbar -->
-    <div class="toolbar">
-      <div class="toolbar__left">
-        <button class="toolbar__back" @click="goBack">←</button>
-        <span class="toolbar__author">{{ photo?.author ?? '…' }}</span>
+    <!-- Content panel -->
+    <div class="panel">
+      <!-- Sub-toolbar -->
+      <div class="toolbar">
+        <div class="toolbar__left">
+          <button class="toolbar__back" @click="goBack">←</button>
+          <span class="toolbar__author">{{ photo?.author ?? '…' }}</span>
+        </div>
+
+        <div class="toolbar__center">
+          <button
+            class="toolbar__nav-btn"
+            :disabled="isPrevDisabled"
+            @click="goToPrev"
+          >&lsaquo;</button>
+          <button
+            class="toolbar__nav-btn"
+            :disabled="isNextDisabled"
+            @click="goToNext"
+          >&rsaquo;</button>
+        </div>
+
+        <div class="toolbar__right">
+          <a
+            v-if="photo"
+            class="toolbar__download"
+            :href="photo.download_url"
+            target="_blank"
+            rel="noopener"
+          >Download</a>
+        </div>
       </div>
 
-      <div class="toolbar__center">
-        <button
-          class="toolbar__nav-btn"
-          :disabled="isPrevDisabled"
-          @click="goToPrev"
-        >&lsaquo;</button>
-        <button
-          class="toolbar__nav-btn"
-          :disabled="isNextDisabled"
-          @click="goToNext"
-        >&rsaquo;</button>
-      </div>
+      <!-- Content -->
+      <main class="detail">
+        <div v-if="isLoading" class="detail__loading">Loading…</div>
 
-      <div class="toolbar__right">
-        <a
-          v-if="photo"
-          class="toolbar__download"
-          :href="photo.download_url"
-          target="_blank"
-          rel="noopener"
-        >Download</a>
-      </div>
+        <div v-else-if="error" class="detail__error">{{ error }}</div>
+
+        <div v-else-if="photo" class="detail__content">
+          <p class="detail__dimensions">{{ photo.width }}x{{ photo.height }}</p>
+          <img
+            :src="`https://picsum.photos/id/${photo.id}/1080/1080`"
+            :alt="photo.author"
+            class="detail__image"
+          />
+        </div>
+      </main>
     </div>
-
-    <!-- Content -->
-    <main class="detail">
-      <div v-if="isLoading" class="detail__loading">Loading…</div>
-
-      <div v-else-if="error" class="detail__error">{{ error }}</div>
-
-      <div v-else-if="photo" class="detail__content">
-        <p class="detail__dimensions">{{ photo.width }}x{{ photo.height }}</p>
-        <img
-          :src="`https://picsum.photos/id/${photo.id}/1080/1080`"
-          :alt="photo.author"
-          class="detail__image"
-        />
-      </div>
-    </main>
   </div>
 </template>
 
@@ -131,7 +134,7 @@ function goBack() {
 // ── Layout ──────────────────────────────────────────────────────────────────
 .page {
   min-height: 100vh;
-  background: $bg;
+  background: $white;
 }
 
 // ── Navbar ──────────────────────────────────────────────────────────────────
@@ -151,6 +154,15 @@ function goBack() {
   }
 }
 
+// ── Panel ────────────────────────────────────────────────────────────────────
+.panel {
+  margin: 1.5rem $page-padding;
+  background: $bg;
+  border-radius: 12px;
+  border: 1px solid $border;
+  overflow: hidden;
+}
+
 // ── Toolbar ─────────────────────────────────────────────────────────────────
 .toolbar {
   display: flex;
@@ -158,7 +170,7 @@ function goBack() {
   justify-content: space-between;
   padding: 0 $page-padding;
   height: 52px;
-  background: $white;
+  background: $bg;
   border-bottom: 1px solid $border;
 
   &__left {
@@ -228,7 +240,7 @@ function goBack() {
     border: 1px solid $border-lighter;
     border-radius: 4px;
     padding: 5px 14px;
-    background: $white;
+    background: $bg;
     transition: background 0.15s;
 
     &:hover {
