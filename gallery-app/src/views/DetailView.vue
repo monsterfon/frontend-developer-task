@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useGalleryStore } from '@/stores/galleryStore'
 import { fetchPhoto } from '@/api/picsum'
@@ -11,12 +11,16 @@ const store = useGalleryStore()
 
 const photo = ref<Photo | null>(null)
 const isLoading = ref(false)
+const error = ref<string | null>(null)
 
 async function loadPhoto(id: string) {
   store.lastViewedId = id
   isLoading.value = true
+  error.value = null
   try {
     photo.value = await fetchPhoto(id)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to load photo'
   } finally {
     isLoading.value = false
   }
@@ -33,17 +37,30 @@ function currentIndex() {
   return store.photos.findIndex(p => p.id === route.params.id)
 }
 
-function goToPrev() {
+const isPrevDisabled = computed(() => currentIndex() === 0 && store.currentPage === 1)
+const isNextDisabled = computed(() => currentIndex() === store.photos.length - 1 && store.currentPage === store.totalPages)
+
+async function goToPrev() {
   const index = currentIndex()
   if (index > 0) {
-    router.push({ name: 'detail', params: { id: store.photos[index - 1].id } })
+    const prev = store.photos[index - 1]
+    if (prev) router.push({ name: 'detail', params: { id: prev.id } })
+  } else if (store.currentPage > 1) {
+    await store.loadPage(store.currentPage - 1)
+    const last = store.photos[store.photos.length - 1]
+    if (last) router.push({ name: 'detail', params: { id: last.id } })
   }
 }
 
-function goToNext() {
+async function goToNext() {
   const index = currentIndex()
   if (index < store.photos.length - 1) {
-    router.push({ name: 'detail', params: { id: store.photos[index + 1].id } })
+    const next = store.photos[index + 1]
+    if (next) router.push({ name: 'detail', params: { id: next.id } })
+  } else if (store.currentPage < store.totalPages) {
+    await store.loadPage(store.currentPage + 1)
+    const first = store.photos[0]
+    if (first) router.push({ name: 'detail', params: { id: first.id } })
   }
 }
 
@@ -69,12 +86,12 @@ function goBack() {
       <div class="toolbar__center">
         <button
           class="toolbar__nav-btn"
-          :disabled="currentIndex() === 0"
+          :disabled="isPrevDisabled"
           @click="goToPrev"
         >&lsaquo;</button>
         <button
           class="toolbar__nav-btn"
-          :disabled="currentIndex() === store.photos.length - 1"
+          :disabled="isNextDisabled"
           @click="goToNext"
         >&rsaquo;</button>
       </div>
@@ -94,6 +111,8 @@ function goBack() {
     <main class="detail">
       <div v-if="isLoading" class="detail__loading">Loading…</div>
 
+      <div v-else-if="error" class="detail__error">{{ error }}</div>
+
       <div v-else-if="photo" class="detail__content">
         <p class="detail__dimensions">{{ photo.width }}x{{ photo.height }}</p>
         <img
@@ -106,143 +125,150 @@ function goBack() {
   </div>
 </template>
 
-<style scoped>
-/* ── Layout ── */
+<style lang="scss" scoped>
+@use '@/assets/variables' as *;
+
+// ── Layout ──────────────────────────────────────────────────────────────────
 .page {
   min-height: 100vh;
-  background: #f2f3f5;
+  background: $bg;
 }
 
-/* ── Navbar ── */
+// ── Navbar ──────────────────────────────────────────────────────────────────
 .navbar {
   display: flex;
   align-items: center;
-  padding: 0 2rem;
-  height: 56px;
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  padding: 0 $page-padding;
+  height: $navbar-height;
+  background: $white;
+  border-bottom: 1px solid $border;
+
+  &__logo {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: $text-primary;
+  }
 }
 
-.navbar__logo {
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  color: #111;
-}
-
-/* ── Toolbar ── */
+// ── Toolbar ─────────────────────────────────────────────────────────────────
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2rem;
+  padding: 0 $page-padding;
   height: 52px;
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  background: $white;
+  border-bottom: 1px solid $border;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 200px;
+  }
+
+  &__back {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: $text-secondary;
+    padding: 4px 6px;
+    line-height: 1;
+
+    &:hover {
+      color: $text-primary;
+    }
+  }
+
+  &__author {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  &__center {
+    display: flex;
+    gap: 4px;
+  }
+
+  &__nav-btn {
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: 1px solid $border-light;
+    border-radius: 4px;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    color: $text-secondary;
+    transition: background 0.15s;
+
+    &:hover:not(:disabled) {
+      background: $hover-bg;
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+  }
+
+  &__right {
+    min-width: 200px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__download {
+    font-size: 0.8rem;
+    color: $text-secondary;
+    text-decoration: none;
+    border: 1px solid $border-lighter;
+    border-radius: 4px;
+    padding: 5px 14px;
+    background: $white;
+    transition: background 0.15s;
+
+    &:hover {
+      background: $hover-bg;
+    }
+  }
 }
 
-.toolbar__left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-width: 200px;
-}
-
-.toolbar__back {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  cursor: pointer;
-  color: #333;
-  padding: 4px 6px;
-  line-height: 1;
-}
-
-.toolbar__back:hover {
-  color: #000;
-}
-
-.toolbar__author {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #111;
-}
-
-.toolbar__center {
-  display: flex;
-  gap: 4px;
-}
-
-.toolbar__nav-btn {
-  width: 32px;
-  height: 32px;
-  background: none;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  font-size: 1.25rem;
-  line-height: 1;
-  cursor: pointer;
-  color: #333;
-  transition: background 0.15s;
-}
-
-.toolbar__nav-btn:hover:not(:disabled) {
-  background: #f0f0f0;
-}
-
-.toolbar__nav-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.toolbar__right {
-  min-width: 200px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.toolbar__download {
-  font-size: 0.8rem;
-  color: #333;
-  text-decoration: none;
-  border: 1px solid #c8c8c8;
-  border-radius: 4px;
-  padding: 5px 14px;
-  background: #fff;
-  transition: background 0.15s;
-}
-
-.toolbar__download:hover {
-  background: #f5f5f5;
-}
-
-/* ── Detail content ── */
+// ── Detail content ───────────────────────────────────────────────────────────
 .detail {
-  padding: 2rem;
+  padding: $page-padding;
   display: flex;
   justify-content: center;
-}
 
-.detail__loading {
-  padding: 6rem;
-  color: #888;
-}
+  &__loading {
+    padding: 6rem;
+    color: $text-faint;
+  }
 
-.detail__content {
-  width: 100%;
-  max-width: 720px;
-}
+  &__error {
+    padding: 6rem;
+    color: #c0392b;
+  }
 
-.detail__dimensions {
-  font-size: 0.78rem;
-  color: #aaa;
-  margin: 0 0 0.5rem 0;
-}
+  &__content {
+    width: 100%;
+    max-width: 720px;
+  }
 
-.detail__image {
-  width: 100%;
-  border-radius: 8px;
-  display: block;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
+  &__dimensions {
+    font-size: 0.78rem;
+    color: $text-subtle;
+    margin: 0 0 0.5rem 0;
+  }
+
+  &__image {
+    width: 100%;
+    border-radius: 8px;
+    display: block;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
+  }
 }
 </style>

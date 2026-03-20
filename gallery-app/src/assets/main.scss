@@ -1,4 +1,8 @@
-*, *::before, *::after {
+@use 'variables' as *;
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -6,8 +10,8 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f2f3f5; /* Light gray background */
-  color: #111; /* Near black text color */
+  background: $bg;
+  color: $text-primary;
   -webkit-font-smoothing: antialiased;
 }
 
